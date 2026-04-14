@@ -16,8 +16,8 @@ ci: $(USER_TARGETS)
 
 module: monitor.ko
 
-engine: engine.c monitor_ioctl.h
-	gcc -O2 -Wall -Wextra -o engine engine.c -lpthread
+engine: engine.c container.c logger.c utils.c monitor_ioctl.h utils.h logger.h container.h
+	gcc -O2 -Wall -Wextra -o engine engine.c container.c logger.c utils.c -lpthread
 
 memory_hog: memory_hog.c
 	gcc -O2 -Wall $(WORKLOAD_LDFLAGS) -o memory_hog memory_hog.c
