@@ -373,6 +373,9 @@ static int run_supervisor(const char *rootfs) {
                 case CMD_START:
                     spawn_container(&req, &resp);
                     break;
+                case CMD_RUN:
+                    spawn_container(&req, &resp);
+                    break;
                 case CMD_STOP:
                     stop_container(&req, &resp);
                     break;
@@ -492,6 +495,25 @@ int main(int argc, char *argv[]) {
         control_request_t req;
         memset(&req, 0, sizeof(req));
         req.kind = CMD_START;
+        strncpy(req.container_id, argv[2], sizeof(req.container_id) - 1);
+        strncpy(req.rootfs, argv[3], sizeof(req.rootfs) - 1);
+        strncpy(req.command, argv[4], sizeof(req.command) - 1);
+        
+        req.soft_limit_bytes = DEFAULT_SOFT_LIMIT;
+        req.hard_limit_bytes = DEFAULT_HARD_LIMIT;
+        
+        if (parse_optional_flags(&req, argc, argv, 5) != 0) return 1;
+        return send_control_request(&req);
+    }
+
+    if (strcmp(argv[1], "run") == 0) {
+        if (argc < 5) {
+            usage(argv[0]);
+            return 1;
+        }
+        control_request_t req;
+        memset(&req, 0, sizeof(req));
+        req.kind = CMD_RUN;
         strncpy(req.container_id, argv[2], sizeof(req.container_id) - 1);
         strncpy(req.rootfs, argv[3], sizeof(req.rootfs) - 1);
         strncpy(req.command, argv[4], sizeof(req.command) - 1);
