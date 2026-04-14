@@ -7,6 +7,7 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/resource.h>
 
 const char *state_to_string(container_state_t state) {
     switch (state) {
@@ -83,6 +84,11 @@ int child_fn(void *arg) {
     if (count == 0) {
         fprintf(stderr, "No command provided\n");
         return 1;
+    }
+    if (config->nice_value != 0) {
+        if (setpriority(PRIO_PROCESS, 0, config->nice_value) != 0) {
+            perror("setpriority failed");
+        }
     }
 
     execvp(args[0], args);

@@ -197,6 +197,14 @@ static int spawn_container(control_request_t *req, control_response_t *resp) {
     record->hard_limit_bytes = req->hard_limit_bytes;
     snprintf(record->log_path, sizeof(record->log_path), "%s/%s.log", LOG_DIR, req->container_id);
 
+    struct monitor_request mreq = {
+        .pid = child_pid,
+        .soft_limit_bytes = req->soft_limit_bytes,
+        .hard_limit_bytes = req->hard_limit_bytes,
+    };
+    strncpy(mreq.container_id, req->container_id, MONITOR_NAME_LEN - 1);
+    ioctl(g_ctx.monitor_fd, MONITOR_REGISTER, &mreq);
+
     record->next = g_ctx.containers;
     g_ctx.containers = record;
     pthread_mutex_unlock(&g_ctx.metadata_lock);
@@ -211,9 +219,19 @@ static int stop_container(control_request_t *req, control_response_t *resp) {
     container_record_t *curr = g_ctx.containers;
     while (curr) {
         if (strcmp(curr->id, req->container_id) == 0 && curr->state == CONTAINER_RUNNING) {
+
+            struct monitor_request mreq = {
+                .pid = curr->host_pid
+            };
+            strncpy(mreq.container_id, curr->id, MONITOR_NAME_LEN - 1);
+
+            ioctl(g_ctx.monitor_fd, MONITOR_UNREGISTER, &mreq);
+
             kill(curr->host_pid, SIGTERM);
             curr->state = CONTAINER_STOPPED;
+
             pthread_mutex_unlock(&g_ctx.metadata_lock);
+
             snprintf(resp->message, sizeof(resp->message), "Stopped container %s", req->container_id);
             resp->status = 0;
             return 0;
@@ -349,6 +367,7 @@ static int run_supervisor(const char *rootfs) {
     }
 
     g_ctx.server_fd = sock;
+    g_ctx.monitor_fd = open("/dev/container_monitor", O_RDWR);
 
     printf("Supervisor running on %s\n", CONTROL_PATH);
 
@@ -373,8 +392,39 @@ static int run_supervisor(const char *rootfs) {
                 case CMD_START:
                     spawn_container(&req, &resp);
                     break;
-                case CMD_RUN:
+                case CMD_RUN: 
                     spawn_container(&req, &resp);
+                    if (resp.status == 0) {
+                        pthread_mutex_lock(&g_ctx.metadata_lock);
+
+                        container_record_t *curr = g_ctx.containers;
+                        pid_t pid = -1;
+
+                        while (curr) {
+                            if (strcmp(curr->id, req.container_id) == 0) {
+                                pid = curr->host_pid;
+                                break;
+                            }
+                            curr = curr->next;
+                        }
+
+                        pthread_mutex_unlock(&g_ctx.metadata_lock);
+
+                        if (pid > 0) {
+                            int status;
+                            waitpid(pid, &status, 0);
+
+                            if (WIFEXITED(status)) {
+                                snprintf(resp.message, sizeof(resp.message),
+                                        "Container %s exited with code %d",
+                                        req.container_id, WEXITSTATUS(status));
+                            } else if (WIFSIGNALED(status)) {
+                                snprintf(resp.message, sizeof(resp.message),
+                                        "Container %s killed by signal %d",
+                                        req.container_id, WTERMSIG(status));
+                            }
+                        }
+                    }
                     break;
                 case CMD_STOP:
                     stop_container(&req, &resp);
