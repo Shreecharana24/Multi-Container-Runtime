@@ -73,35 +73,35 @@ ps aux | grep engine
 ## 3. Demo & Annotated Screenshots
 
 ### 1. Multi-container supervision
-![Replace this text with the path to screenshot 1]()
+![Multi-container supervision](images/screenshot_1_supervision.jpeg)
 *Caption: Two containers running simultaneously under a single long-lived supervisor daemon.*
 
 ### 2. Metadata tracking
-![Replace this text with the path to screenshot 2]()
+![Metadata tracking](images/screenshot_2_metadata.jpeg)
 *Caption: Output from the CLI `ps` command proving the supervisor maintains accurate active tracking of internal container PIDs and Exit codes.*
 
 ### 3. Bounded-buffer logging
-![Replace this text with the path to screenshot 3]()
+![Bounded-buffer logging](images/screenshot_3_logging.jpeg)
 *Caption: The successful retrieval of `stdout` stream proving the piped producer/consumer buffer is safely serializing logs.*
 
 ### 4. CLI and IPC
-![Replace this text with the path to screenshot 4]()
+![CLI and IPC](images/screenshot_4_cli_ipc.jpeg)
 *Caption: The CLI issuing commands via UNIX socket IPC to the daemon, receiving confirmation of execution.*
 
 ### 5. Soft-limit warning
-![Replace this text with the path to screenshot 5]()
+![Soft-limit warning](images/screenshot_5_softlimit.jpeg)
 *Caption: `dmesg` output demonstrating our LKM catching a program approaching its threshold with a soft warning.*
 
 ### 6. Hard-limit enforcement
-![Replace this text with the path to screenshot 6]()
+![Hard-limit enforcement](images/screenshot_6_hardlimit.jpeg)
 *Caption: Evidence across `dmesg` (`SIGKILL` trigger) and `ps` (state updated to 9/killed) of perfectly orchestrated hard memory limit enforcement.*
 
 ### 7. Scheduling experiment
-![Replace this text with the path to screenshot 7]()
+![Scheduling experiment](images/screenshot_7_scheduling.jpeg)
 *Caption: `top` demonstrating absolute disparity in Linux Completely Fair Scheduler (CFS) allocations due to differing `nice` parameters.*
 
 ### 8. Clean teardown
-![Replace this text with the path to screenshot 8]()
+![Clean teardown](images/screenshot_8_teardown.jpeg)
 *Caption: Absolute verification `ps aux` that no straggling `engine` processes leaked and the LKM was gracefully unmounted.*
 
 ---
